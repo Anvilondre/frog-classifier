@@ -19,6 +19,8 @@ for (name, img) in images:
     elif key & 0xFF == ord('e'):
         remove(name)
         cv.imwrite(f'data/toads/toad_{(toad_ind := toad_ind + 1)}.png', img)
+    elif key & 0xFF == ord('d'):
+        remove(name)
     elif key & 0xFF == ord('s'):
         with open('data/counters.txt', 'w') as w:
             w.write(f'{frog_ind}\n{toad_ind}')
