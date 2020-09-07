@@ -2,7 +2,7 @@ import cv2 as cv
 from glob import glob
 from os import remove
 
-images = ((y, cv.imread(y, cv.IMREAD_UNCHANGED)) for y in glob('data/samples/*.png'))
+images = ((y, cv.imread(y)) for y in glob('data/samples/*.png'))
 
 with open('data/counters.txt', 'r') as r:
     frog_ind, toad_ind = map(int, r.read().split())
