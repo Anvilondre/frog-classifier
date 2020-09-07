@@ -9,7 +9,7 @@ with open('data/counters.txt', 'r') as r:
 
 for (name, img) in images:
 
-    cv.imshow('Tinder', img)
+    cv.imshow('Tinder', cv.resize(img, (450, 450)))
 
     key = cv.waitKey(0)
 
