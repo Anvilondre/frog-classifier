@@ -1,4 +1,5 @@
 import numpy as np
+from scipy.io import savemat, loadmat
 
 
 def relu(x):
@@ -10,7 +11,8 @@ def sigmoid(x):
 
 
 class Model:
-    def __init__(self, layer_dims: [int]):
+    def __init__(self, layer_dims: [int], seed=1):
+        np.random.seed(seed)  # Seed for random numbers generation
         self.L = len(layer_dims)  # Number of layers
         self.layer_dims = layer_dims  # Dimensions of each layer
         self.caches = [[] for _ in range(self.L)]
@@ -20,6 +22,15 @@ class Model:
         self.db = []
         self.dW = []
         self.cost = 0
+
+    def save_weights(self, file='data/weights/weights.mat'):
+        savemat(file, mdict={'W': self.W,
+                             'b': self.b})
+
+    def load_weights(self, file='data/weights/weights.mat'):
+        mat = loadmat(file)
+        self.W = mat['W'][0]
+        self.b = mat['b'][0]
 
     def fit(self, folds_X, folds_Y, learning_rate, number_iterations):
         """" Trains the model. """
@@ -63,6 +74,6 @@ class Model:
 
 
 if __name__ == '__main__':
-    model = Model([500, 4, 1])
+    model = Model([500, 4, 3, 1])
     model.initialize_parameters()
-    model.propagate_forward(np.ones((500, 220)))
+    print(model.W)

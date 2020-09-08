@@ -22,7 +22,7 @@ def parse_data(*locations, extensions='.png', save=False, save_loc='', size=(128
     if save:
         i = 0
         for img, ind in data:
-            cv.imwrite(f'{save_loc}\{(i := i + 1)}_{ind}.png', img)
+            cv.imwrite(f'{save_loc}/{(i := i + 1)}_{ind}.png', img)
     return X, Y
 
 
