@@ -2,11 +2,11 @@ import numpy as np
 
 
 def relu(x):
-    return np.maximum(0, x), x
+    return x, np.maximum(0, x)
 
 
 def sigmoid(x):
-    return 1 / (1 + np.exp(-x)), x
+    return x, 1 / (1 + np.exp(-x))
 
 
 class Model:
@@ -27,7 +27,7 @@ class Model:
 
     def initialize_parameters(self):
         """ Initialize W, b parameters with Xavier initialization. """
-        for i in range(1, self.i):
+        for i in range(1, self.L):
             self.W[i - 1] = np.random.randn(self.layer_dims[i], self.layer_dims[i - 1]) * \
                             np.sqrt(2 / self.layer_dims[i - 1])
             self.b[i - 1] = np.zeros((self.layer_dims[i], 1))
@@ -40,11 +40,11 @@ class Model:
 
         for i in range(0, L - 1):
             Z = np.matmul(self.W[i], A) + self.b[i]
-            A, *cache = *relu(Z), Z
+            *cache, A = (A, self.W[i], self.b[i]), *relu(Z)
             self.caches[i] = cache
 
         Z = np.matmul(self.W[L - 1], A) + self.b[L - 1]
-        AL, *cache = *sigmoid(Z), Z
+        *cache, AL = (A, self.W[L - 1], self.b[L - 1]), *sigmoid(Z)
         self.caches[L - 1] = cache
 
         return AL
@@ -65,4 +65,4 @@ class Model:
 if __name__ == '__main__':
     model = Model([500, 4, 1])
     model.initialize_parameters()
-    print(model.propagate_forward(np.ones((500, 220))))
+    model.propagate_forward(np.ones((500, 220)))
