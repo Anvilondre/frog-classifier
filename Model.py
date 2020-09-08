@@ -12,15 +12,17 @@ def sigmoid(x):
 class Model:
     def __init__(self, layer_dims: [int]):
         self.L = len(layer_dims)  # Number of layers
-        self.layer_dims = layer_dims  #
-        self.W = \
-            self.b = \
-            self.dA = \
-            self.db = \
-            self.dW = \
-            self.cost = ...
+        self.n_x = layer_dims[0]  # Size of input layer
+        self.layer_dims = layer_dims  # Dimensions of each layer
+        self.W = []
+        self.b = []
+        self.dA = []
+        self.db = []
+        self.dW = []
+        self.cost = 0
 
     def fit(self, folds_X, folds_Y, learning_rate, number_iterations):
+        """" Trains the model. """
         pass
 
     def initialize_parameters(self):
