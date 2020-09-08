@@ -2,20 +2,19 @@ import numpy as np
 
 
 def relu(x):
-    return np.maximum(0, x)
+    return np.maximum(0, x), x
 
 
 def sigmoid(x):
-    return 1 / (1 + np.exp(-x))
+    return 1 / (1 + np.exp(-x)), x
 
 
 class Model:
     def __init__(self, layer_dims: [int]):
         self.L = len(layer_dims)  # Number of layers
-        self.n_x = layer_dims[0]  # Size of input layer
         self.layer_dims = layer_dims  # Dimensions of each layer
+        self.caches = [[] for _ in range(self.L)]
         self.W = [0] * (self.L - 1)
-        print(self.W)
         self.b = [0] * (self.L - 1)
         self.dA = []
         self.db = []
@@ -28,14 +27,27 @@ class Model:
 
     def initialize_parameters(self):
         """ Initialize W, b parameters with Xavier initialization. """
-        for l in range(1, self.L):
-            self.W[l-1] = (np.random.randn(self.layer_dims[l], self.layer_dims[l - 1]) * \
-                          np.sqrt(2 / self.layer_dims[l - 1]))
-            self.b[l-1] = np.zeros((self.layer_dims[l], 1))
+        for i in range(1, self.i):
+            self.W[i - 1] = np.random.randn(self.layer_dims[i], self.layer_dims[i - 1]) * \
+                            np.sqrt(2 / self.layer_dims[i - 1])
+            self.b[i - 1] = np.zeros((self.layer_dims[i], 1))
 
     def propagate_forward(self, X):
         """" Implements forward propagation and returns AL - vector of predictions for samples in X. """
-        pass
+
+        A = X
+        L = self.L - 1
+
+        for i in range(0, L - 1):
+            Z = np.matmul(self.W[i], A) + self.b[i]
+            A, *cache = *relu(Z), Z
+            self.caches[i] = cache
+
+        Z = np.matmul(self.W[L - 1], A) + self.b[L - 1]
+        AL, *cache = *sigmoid(Z), Z
+        self.caches[L - 1] = cache
+
+        return AL
 
     def compute_cost(self, AL, Y):
         """ Computes the cross-entropy cost based on predictions vector AL and true labels Y. """
@@ -51,7 +63,6 @@ class Model:
 
 
 if __name__ == '__main__':
-    model = Model([2, 4, 1])
+    model = Model([500, 4, 1])
     model.initialize_parameters()
-    print(model.W)
-    print(model.b)
+    print(model.propagate_forward(np.ones((500, 220))))
