@@ -6,8 +6,21 @@ def relu(x):
     return x, np.maximum(0, x)
 
 
+def relu_backward(dA, Z):
+    dZ = np.array(dA, copy=True)
+    dZ[Z <= 0] = 0
+    return dZ
+
+
 def sigmoid(x):
     return x, 1 / (1 + np.exp(-x))
+
+
+def sigmoid_backward(dA, Z):
+    Z = Z.copy()
+    Z = np.array(Z)
+    s = 1 / (1 + np.exp(-Z))
+    return dA * s * (s - 1)
 
 
 class Model:
@@ -15,12 +28,12 @@ class Model:
         np.random.seed(seed)  # Seed for random numbers generation
         self.L = len(layer_dims)  # Number of layers
         self.layer_dims = layer_dims  # Dimensions of each layer
-        self.caches = [[] for _ in range(self.L)]
+        self.caches = [[] for _ in range(self.L - 1)]
         self.W = [0] * (self.L - 1)
         self.b = [0] * (self.L - 1)
-        self.dA = []
-        self.db = []
-        self.dW = []
+        self.dA = [0] * (self.L - 1)
+        self.db = [0] * (self.L - 1)
+        self.dW = [0] * (self.L - 1)
         self.cost = 0
 
     def save_weights(self, file='data/weights/weights.mat'):
@@ -68,9 +81,27 @@ class Model:
 
         return cost
 
-    def propagate_backward(self, AL, Y, caches):
+    def linear_backward(self, dZ, cache):
+        A_prev, W, b = cache
+        m = A_prev.shape[1]
+        dW = np.matmul(dZ, A_prev.T) / m
+        db = np.sum(dZ, axis=1, keepdims=True) / m
+        dA_prev = np.matmul(W.T, dZ)
+        return dA_prev, dW, db
+
+    def propagate_backward(self, AL, Y):
         """ Competes gradients for further parameters update. """
-        pass
+        L = len(self.caches)
+        Y = Y.reshape(AL.shape)
+
+        dAL = - (np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))
+        cache = self.caches[L - 1]
+
+        self.dA[L - 1], self.dW[L - 1], self.db[L - 1] = self.linear_backward(sigmoid_backward(dAL, cache[1]), cache[0])
+
+        for i in reversed(range(L - 1)):
+            cache = self.caches[i]
+            self.dA[i], self.dW[i], self.db[i] = self.linear_backward(relu_backward(self.dA[i + 1], cache[1]), cache[0])
 
     def update_parameters(self, learning_rate):
         """ Updates the W, b parameters. """
@@ -78,6 +109,6 @@ class Model:
 
 
 if __name__ == '__main__':
-    model = Model([500, 4, 3, 1])
+    model = Model([500, 4, 1])
     model.initialize_parameters()
-    print(model.W)
+    model.propagate_forward(np.ones((500, 220)))
