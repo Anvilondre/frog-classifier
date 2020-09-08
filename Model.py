@@ -14,8 +14,9 @@ class Model:
         self.L = len(layer_dims)  # Number of layers
         self.n_x = layer_dims[0]  # Size of input layer
         self.layer_dims = layer_dims  # Dimensions of each layer
-        self.W = []
-        self.b = []
+        self.W = [0] * (self.L - 1)
+        print(self.W)
+        self.b = [0] * (self.L - 1)
         self.dA = []
         self.db = []
         self.dW = []
@@ -27,7 +28,10 @@ class Model:
 
     def initialize_parameters(self):
         """ Initialize W, b parameters with Xavier initialization. """
-        pass
+        for l in range(1, self.L):
+            self.W[l-1] = (np.random.randn(self.layer_dims[l], self.layer_dims[l - 1]) * \
+                          np.sqrt(2 / self.layer_dims[l - 1]))
+            self.b[l-1] = np.zeros((self.layer_dims[l], 1))
 
     def propagate_forward(self, X):
         """" Implements forward propagation and returns AL - vector of predictions for samples in X. """
@@ -47,4 +51,7 @@ class Model:
 
 
 if __name__ == '__main__':
-    pass
+    model = Model([2, 4, 1])
+    model.initialize_parameters()
+    print(model.W)
+    print(model.b)
