@@ -62,7 +62,11 @@ class Model:
 
     def compute_cost(self, AL, Y):
         """ Computes the cross-entropy cost based on predictions vector AL and true labels Y. """
-        pass
+        m = Y.shape[1]
+        cost = - (1 / m) * sum(np.matmul(Y, np.log(AL).T) + np.matmul(1 - Y, np.log(1 - AL).T))
+        cost = np.squeeze(cost)
+
+        return cost
 
     def propagate_backward(self, AL, Y, caches):
         """ Competes gradients for further parameters update. """
