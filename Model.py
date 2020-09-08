@@ -1,5 +1,6 @@
 import numpy as np
 from scipy.io import savemat, loadmat
+from DataSplitter import split_train_test, parse_data
 
 
 def relu(x):
@@ -36,6 +37,18 @@ class Model:
         self.dW = [0] * (self.L - 1)
         self.cost = 0
 
+    def fit(self, folds_X, folds_Y, learning_rate=0.0075, number_iterations=3000):
+        """" Trains the model. """
+        self.initialize_parameters()
+        for i in range(number_iterations):
+            AL = self.propagate_forward(folds_X)
+            cost = self.compute_cost(AL, folds_Y)
+            self.propagate_backward(AL, folds_Y)
+            self.update_parameters(learning_rate)
+            if i % 100 == 0:
+                print(i, cost)
+
+
     def save_weights(self, file='data/weights/weights.mat'):
         savemat(file, mdict={'W': self.W,
                              'b': self.b})
@@ -44,10 +57,6 @@ class Model:
         mat = loadmat(file)
         self.W = mat['W'][0]
         self.b = mat['b'][0]
-
-    def fit(self, folds_X, folds_Y, learning_rate, number_iterations):
-        """" Trains the model. """
-        pass
 
     def initialize_parameters(self):
         """ Initialize W, b parameters with Xavier initialization. """
@@ -105,10 +114,12 @@ class Model:
 
     def update_parameters(self, learning_rate):
         """ Updates the W, b parameters. """
-        pass
+        for i in range(self.L - 1):
+            self.W[i] -= learning_rate*self.W[i]*self.dW[i]
+            self.b[i] -= learning_rate*self.b[i]*self.db[i]
 
 
 if __name__ == '__main__':
-    model = Model([500, 4, 1])
-    model.initialize_parameters()
-    model.propagate_forward(np.ones((500, 220)))
+    X, Y = parse_data('data/frogs', 'data/toads', save=False)
+    model = Model([len(X[0]), 4, 4, 1])
+    model.fit(X, Y)
