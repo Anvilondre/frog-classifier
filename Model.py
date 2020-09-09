@@ -1,26 +1,22 @@
 import numpy as np
 from scipy.io import savemat, loadmat
 from DataSplitter import parse_data
+import matplotlib.pyplot as plt
 
 
 def relu(Z):
-    A = np.maximum(0, Z)
-    cache = Z
-    return A, cache
+    return np.maximum(0, Z)
 
 
 def relu_backward(dA, cache):
     Z = cache
-    dZ = np.array(dA, copy=True)  # just converting dz to a correct object.
-    # When z <= 0, you should set dz to 0 as well.
+    dZ = np.array(dA, copy=True)
     dZ[Z <= 0] = 0
-    assert (dZ.shape == Z.shape)
-
     return dZ
 
 
 def sigmoid(x):
-    return x, 1 / (1 + np.exp(-x))
+    return 1 / (1 + np.exp(-x))
 
 
 def sigmoid_backward(dA, cache):
@@ -41,21 +37,23 @@ class Model:
         self.dA = [0] * (self.L - 1)
         self.db = [0] * (self.L - 1)
         self.dW = [0] * (self.L - 1)
+        self.costs = []
         self.cost = 0
 
-    def fit(self, folds_X, folds_Y, learning_rate=0.008, number_iterations=6000):
+    def fit(self, folds_X, folds_Y, learning_rate=0.01, number_iterations=6000):
         """" Trains the model. """
-        self.initialize_parameters()
         for i in range(number_iterations):
-            if i % 1500 == 0:
-                learning_rate = learning_rate / 2
             AL = self.propagate_forward(folds_X)
             self.cost = self.compute_cost(AL, folds_Y)
+            self.costs.append(self.cost)
             self.propagate_backward(AL, folds_Y)
             self.update_parameters(learning_rate)
-
-            if i % 5 == 0:
-                print(i, self.cost)
+            self.save_weights()
+            if i % 50 == 0:
+                print("Iterations: ", i, "cost: ", self.cost)
+                plt.plot(range(i), self.costs)
+                plt.savefig('learning_fig.png')
+                self.save_weights()
 
     def save_weights(self, file='data/weights/weights.mat'):
         savemat(file, mdict={'W': self.W,
@@ -72,7 +70,6 @@ class Model:
             self.W[i - 1] = np.random.randn(self.layer_dims[i], self.layer_dims[i - 1]) * 0.01
             self.b[i - 1] = np.zeros((self.layer_dims[i], 1))
 
-
     def propagate_forward(self, X):
         """" Implements forward propagation and returns AL - vector of predictions for samples in X. """
 
@@ -81,10 +78,12 @@ class Model:
 
         for i in range(0, L - 1):
             Z = np.matmul(self.W[i], A) + self.b[i]
-            *cache, A = (A, self.W[i], self.b[i]), *relu(Z)
+            cache = ((A, self.W[i], self.b[i]), Z)
+            A = relu(Z)
             self.caches[i] = cache
         Z = np.matmul(self.W[L - 1], A) + self.b[L - 1]
-        *cache, AL = (A, self.W[L - 1], self.b[L - 1]), *sigmoid(Z)
+        cache = ((A, self.W[L - 1], self.b[L - 1]), Z)
+        AL = sigmoid(Z)
         self.caches[L - 1] = cache
         return AL
 
@@ -137,9 +136,8 @@ class Model:
 
 if __name__ == '__main__':
     X, Y = parse_data('data/frogs', 'data/toads', save=False)
-    X = X[:400].T
-    Y = Y[:400]
-    model = Model([len(X), 3, 3, 1])
-    Y = Y.reshape((Y.shape[0], 1))
-    model.fit(X, Y.T)
-
+    X = X[:500].T
+    model = Model([X.shape[0], 100, 100, 50, 1])
+    model.initialize_parameters()
+    Y = Y[:500].reshape((1, Y[:500].shape[0]))
+    model.fit(X, Y)
