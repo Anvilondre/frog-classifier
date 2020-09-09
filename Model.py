@@ -38,22 +38,27 @@ class Model:
         self.db = [0] * (self.L - 1)
         self.dW = [0] * (self.L - 1)
         self.costs = []
+        self.v_dW = [0] * (self.L - 1)
+        self.v_db = [0] * (self.L - 1)
+        self.s_dW = [0] * (self.L - 1)
+        self.s_db = [0] * (self.L - 1)
         self.cost = 0
 
     def fit(self, folds_X, folds_Y, learning_rate=0.01, number_iterations=6000):
         """" Trains the model. """
+        self.initialize_Adam()
         for i in range(number_iterations):
             AL = self.propagate_forward(folds_X)
             self.cost = self.compute_cost(AL, folds_Y)
             self.costs.append(self.cost)
             self.propagate_backward(AL, folds_Y)
-            self.update_parameters(learning_rate)
-            self.save_weights()
-            if i % 50 == 0:
+            self.update_parameters_with_adam(learning_rate)
+            # self.save_weights()
+            if i % 5 == 0:
                 print("Iterations: ", i, "cost: ", self.cost)
-                plt.plot(range(i), self.costs)
+                plt.plot(range(i+1), self.costs)
                 plt.savefig('learning_fig.png')
-                self.save_weights()
+                # self.save_weights()
 
     def save_weights(self, file='data/weights/weights.mat'):
         savemat(file, mdict={'W': self.W,
@@ -69,6 +74,13 @@ class Model:
         for i in range(1, self.L):
             self.W[i - 1] = np.random.randn(self.layer_dims[i], self.layer_dims[i - 1]) * 0.01
             self.b[i - 1] = np.zeros((self.layer_dims[i], 1))
+
+    def initialize_Adam(self):
+        for i in range(0, len(self.W)):
+            self.v_dW[i] = np.zeros(self.W[i].shape)
+            self.v_db[i] = np.zeros(self.b[i].shape)
+            self.s_dW[i] = np.zeros(self.W[i].shape)
+            self.s_db[i] = np.zeros(self.b[i].shape)
 
     def propagate_forward(self, X):
         """" Implements forward propagation and returns AL - vector of predictions for samples in X. """
@@ -119,7 +131,6 @@ class Model:
         L = len(self.caches)
         Y = Y.reshape(AL.shape)
         dAL = - (np.divide(Y, AL) - np.divide(1 - Y, 1 - AL))
-
         cache = self.caches[L - 1]
         self.dA[L - 1], self.dW[L - 1], self.db[L - 1] = self.linear_backward(sigmoid_backward(dAL, cache[1]), cache[0])
         for i in reversed(range(L - 1)):
@@ -133,11 +144,34 @@ class Model:
             self.W[i] -= learning_rate * self.dW[i]
             self.b[i] -= learning_rate * self.db[i]
 
+    def update_parameters_with_adam(self, learning_rate, t=0, beta1=0.9, beta2=0.999, epsilon=1e-8):
+        L = len(self.W)
+        correct_v_dW = [0] * L
+        correct_v_db = [0] * L
+        correct_s_dW = [0] * L
+        correct_s_db = [0] * L
+
+        for i in range(self.L - 1):
+            t += 1
+
+            self.v_dW[i] = self.v_dW[i] * beta1 + (1 - beta1) * self.dW[i]
+            self.v_db[i] = self.v_db[i] * beta1 + (1 - beta1) * self.db[i]
+            correct_v_dW[i] = self.v_dW[i] / (1 - np.power(beta1, t))
+            correct_v_db[i] = self.v_db[i] / (1 - np.power(beta1, t))
+            self.s_dW[i] = self.s_dW[i] * beta2 + (1 - beta2) * np.power(self.dW[i], 2)
+            self.s_db[i] = self.s_db[i] * beta2 + (1 - beta2) * np.power(self.db[i], 2)
+            correct_s_dW[i] = self.s_dW[i] / (1 - np.power(beta2, t))
+            correct_s_db[i] = self.s_db[i] / (1 - np.power(beta2, t))
+
+            self.W[i] = self.W[i] - learning_rate * correct_v_dW[i] / (np.sqrt(correct_s_dW[i]) + epsilon)
+            self.b[i] = self.b[i] - learning_rate * correct_v_db[i] / (np.sqrt(correct_s_db[i]) + epsilon)
+
 
 if __name__ == '__main__':
     X, Y = parse_data('data/frogs', 'data/toads', save=False)
-    X = X[:500].T
-    model = Model([X.shape[0], 100, 100, 50, 1])
+    X = X[:400].T
+    Y = Y[:400]
+    model = Model([len(X), 10, 5, 3, 1])
     model.initialize_parameters()
-    Y = Y[:500].reshape((1, Y[:500].shape[0]))
-    model.fit(X, Y)
+    Y = Y.reshape((Y.shape[0], 1))
+    model.fit(X, Y.T)
