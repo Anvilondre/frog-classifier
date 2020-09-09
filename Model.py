@@ -1,6 +1,6 @@
 import numpy as np
 from scipy.io import savemat, loadmat
-from DataSplitter import split_train_test, parse_data
+from DataSplitter import parse_data
 
 
 def relu(Z):
@@ -50,11 +50,12 @@ class Model:
             if i % 1500 == 0:
                 learning_rate = learning_rate / 2
             AL = self.propagate_forward(folds_X)
-            cost = self.compute_cost(AL, folds_Y)
+            self.cost = self.compute_cost(AL, folds_Y)
             self.propagate_backward(AL, folds_Y)
             self.update_parameters(learning_rate)
+
             if i % 5 == 0:
-                print(i, cost)
+                print(i, self.cost)
 
     def save_weights(self, file='data/weights/weights.mat'):
         savemat(file, mdict={'W': self.W,
@@ -69,7 +70,8 @@ class Model:
         """ Initialize W, b parameters with Xavier initialization. """
         for i in range(1, self.L):
             self.W[i - 1] = np.random.randn(self.layer_dims[i], self.layer_dims[i - 1]) * 0.01
-            self.b[i - 1] = np.zeros((self.layer_dims[i], 1)
+            self.b[i - 1] = np.zeros((self.layer_dims[i], 1))
+
 
     def propagate_forward(self, X):
         """" Implements forward propagation and returns AL - vector of predictions for samples in X. """
@@ -81,11 +83,9 @@ class Model:
             Z = np.matmul(self.W[i], A) + self.b[i]
             *cache, A = (A, self.W[i], self.b[i]), *relu(Z)
             self.caches[i] = cache
-
         Z = np.matmul(self.W[L - 1], A) + self.b[L - 1]
         *cache, AL = (A, self.W[L - 1], self.b[L - 1]), *sigmoid(Z)
         self.caches[L - 1] = cache
-
         return AL
 
     def compute_cost(self, AL, Y):
@@ -142,3 +142,4 @@ if __name__ == '__main__':
     model = Model([len(X), 3, 3, 1])
     Y = Y.reshape((Y.shape[0], 1))
     model.fit(X, Y.T)
+
